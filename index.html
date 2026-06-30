@@ -131,6 +131,7 @@
         * {
             -webkit-tap-highlight-color: transparent !important;
             -webkit-user-select: none !important;
+            user-select: none !important;
             outline: none !important;
             /* 💡 ไม้ตายล็อกหน้าจอนิ่ง: ปิดคำสั่ง Double-tap to zoom ของ iOS ไม่ให้หน้าจอสั่นยืดหด */
             touch-action: manipulation !important;
@@ -209,6 +210,7 @@
 
         .extra-controls {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             gap: 10px;
             width: 100%;
@@ -216,7 +218,8 @@
         }
 
         .btn-sub {
-            flex: 1;
+            flex: 1 1 calc(50% - 10px);
+            min-width: 140px;
             padding: 10px;
             font-size: 0.85rem;
             background-color: #e4e6eb;
@@ -226,6 +229,43 @@
 
         .btn-sub:hover {
             background-color: #d8dadf;
+        }
+
+        .grammar-menu {
+            display: grid;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .grammar-item {
+            justify-content: flex-start;
+            text-align: left;
+            background: #f7f9fc;
+            border: 1px solid #e5eaf1;
+            color: var(--text-main);
+            padding: 10px 12px;
+        }
+
+        .grammar-item strong {
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .grammar-preview {
+            margin-top: 10px;
+            padding: 12px;
+            background: #f7f9fc;
+            border-left: 4px solid var(--secondary-color);
+            border-radius: 8px;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .btn-sub {
+                flex-basis: 100%;
+            }
         }
 
         /* Parser Panel Styles */
@@ -310,8 +350,25 @@
 
     <div class="extra-controls">
         <button class="btn btn-sub" onclick="shuffleDeck()">🔀 สลับการ์ด</button>
+        <button class="btn btn-sub" onclick="toggleGrammarPanel()">📚 Grammar</button>
         <button class="btn btn-sub" onclick="togglePanel()">⚙️ จัดการ/เพิ่มคำศัพท์</button>
         <button class="btn btn-sub" id="btn-reset" onclick="resetToDefault()">🔄 รีเซ็ตคลัง</button>
+    </div>
+
+    <div class="panel" id="grammar-panel">
+        <h3>📚 เมนู Grammar</h3>
+        <p style="font-size: 0.8rem; color: var(--text-sub); margin: 0 0 10px 0;">
+            เลือกหัวข้อภาษาอังกฤษที่ต้องการทบทวนและใช้เป็นแหล่งสรุปคำศัพท์แบบคร่าว ๆ
+        </p>
+        <div class="grammar-menu">
+            <button class="btn grammar-item" onclick="showGrammarTopic('present-simple')"><strong>Present Simple</strong>ความจริงทั่วไป กิจวัตรประจำวัน</button>
+            <button class="btn grammar-item" onclick="showGrammarTopic('present-continuous')"><strong>Present Continuous</strong>เกิดขึ้นตอนนี้ เวลาชั่วคราว</button>
+            <button class="btn grammar-item" onclick="showGrammarTopic('past-simple')"><strong>Past Simple</strong>เหตุการณ์ในอดีตที่จบแล้ว</button>
+            <button class="btn grammar-item" onclick="showGrammarTopic('future')"><strong>Future Simple</strong>จะเกิดขึ้นในอนาคต</button>
+            <button class="btn grammar-item" onclick="showGrammarTopic('present-perfect')"><strong>Present Perfect</strong>อดีตที่มีผลต่อปัจจุบัน</button>
+            <button class="btn grammar-item" onclick="showGrammarTopic('past-perfect')"><strong>Past Perfect</strong>อดีตก่อนอดีต</button>
+        </div>
+        <div class="grammar-preview" id="grammar-preview"></div>
     </div>
 
     <div class="panel" id="parser-panel">
@@ -1068,8 +1125,128 @@
         showWord();
     }
 
+    const grammarTopics = {
+        'present-simple': {
+            title: 'Present Simple',
+            content: `<strong>โครงสร้าง (Formula):</strong><br>
+            S + V1 (s/es)<br><br>
+            <strong>การใช้ (Usage):</strong><br>
+            • ความจริงทั่วไป (General facts)<br>
+            • กิจวัตรประจำวัน (Daily habits)<br>
+            • สิ่งที่เกิดซ้ำๆ (Repeated actions)<br>
+            • ข้อเท็จจริงถาวร (Permanent facts)<br><br>
+            <strong>ตัวอย่าง (Examples):</strong><br>
+            • He travels to work every day.<br>
+            • She doesn't like coffee.<br>
+            • Do you like football?<br><br>
+            <strong>ตัวบ่งชี้เวลา (Time expressions):</strong><br>
+            every day, always, usually, sometimes, never, once a week, in the morning`
+        },
+        'present-continuous': {
+            title: 'Present Continuous',
+            content: `<strong>โครงสร้าง (Formula):</strong><br>
+            S + is/am/are + V-ing<br><br>
+            <strong>การใช้ (Usage):</strong><br>
+            • สิ่งที่กำลังเกิดขึ้นตอนนี้ (Actions happening now)<br>
+            • เวลาชั่วคราว (Temporary situations)<br>
+            • สถานการณ์ที่เปลี่ยนแปลง (Changing situations)<br>
+            • แผนในอนาคตที่แน่นอน (Fixed plans)<br><br>
+            <strong>ตัวอย่าง (Examples):</strong><br>
+            • She is reading a book right now.<br>
+            • I am working on this project.<br>
+            • Are they playing football?<br><br>
+            <strong>ตัวบ่งชี้เวลา (Time expressions):</strong><br>
+            now, right now, at the moment, today, this week, currently`
+        },
+        'past-simple': {
+            title: 'Past Simple',
+            content: `<strong>โครงสร้าง (Formula):</strong><br>
+            S + V2 (irregular verb)<br><br>
+            <strong>การใช้ (Usage):</strong><br>
+            • เหตุการณ์ในอดีต (Past events)<br>
+            • สิ่งที่จบแล้ว (Completed actions)<br>
+            • ลำดับเวลาของเหตุการณ์ (Sequence of events)<br>
+            • ข้อเท็จจริงในอดีต (Past facts)<br><br>
+            <strong>ตัวอย่าง (Examples):</strong><br>
+            • We visited Paris last year.<br>
+            • He was cooking when I called.<br>
+            • Did you watch the movie yesterday?<br><br>
+            <strong>ตัวบ่งชี้เวลา (Time expressions):</strong><br>
+            yesterday, last week, ago, in 2020, when, last night`
+        },
+        'future': {
+            title: 'Future Simple',
+            content: `<strong>โครงสร้าง (Formula):</strong><br>
+            S + will + V1<br><br>
+            <strong>การใช้ (Usage):</strong><br>
+            • การตัดสินใจในทันใจ (Spontaneous decisions)<br>
+            • คำพยากรณ์ (Predictions)<br>
+            • ข้อเสนอ/คำสัญญา (Offers/promises)<br>
+            • ข้อเท็จจริงในอนาคต (Future facts)<br><br>
+            <strong>ตัวอย่าง (Examples):</strong><br>
+            • I will call you tomorrow.<br>
+            • They will have been working for 10 years by 2030.<br>
+            • Will you help me please?<br><br>
+            <strong>ตัวบ่งชี้เวลา (Time expressions):</strong><br>
+            tomorrow, next week, in future, soon, later, next month`
+        },
+        'present-perfect': {
+            title: 'Present Perfect',
+            content: `<strong>โครงสร้าง (Formula):</strong><br>
+            S + has/have + V3 (past participle)<br><br>
+            <strong>การใช้ (Usage):</strong><br>
+            • สิ่งที่เกิดขึ้นในอดีต และยังมีผลต่อปัจจุบัน<br>
+            • ประสบการณ์ในชีวิต (Life experience)<br>
+            • การกระทำที่เพิ่งเสร็จ (Recent actions)<br>
+            • ช่วงเวลายังไม่สิ้นสุด (Unfinished period)<br><br>
+            <strong>ตัวอย่าง (Examples):</strong><br>
+            • They have finished their homework.<br>
+            • I have been waiting for an hour.<br>
+            • She has left before the meeting started.<br><br>
+            <strong>ตัวบ่งชี้เวลา (Time expressions):</strong><br>
+            recently, lately, ever, never, so far, already, just, yet`
+        },
+        'past-perfect': {
+            title: 'Past Perfect',
+            content: `<strong>โครงสร้าง (Formula):</strong><br>
+            S + had + V3 (past participle)<br><br>
+            <strong>การใช้ (Usage):</strong><br>
+            • การกระทำในอดีตที่เกิดก่อนการกระทำในอดีตอื่น<br>
+            • ลำดับเวลาอดีต (Sequence of past events)<br>
+            • ข้อเท็จจริงในอดีตที่ผ่านไป<br>
+            • ความสำเร็จก่อนเวลากำหนด<br><br>
+            <strong>ตัวอย่าง (Examples):</strong><br>
+            • She had left before I arrived.<br>
+            • They had been studying for hours before the test began.<br>
+            • I had already eaten when he called.<br><br>
+            <strong>ตัวบ่งชี้เวลา (Time expressions):</strong><br>
+            before, after, by the time, earlier, previously, already`
+        }
+    };
+
+    function showGrammarTopic(topicKey) {
+        const topic = grammarTopics[topicKey] || grammarTopics['present-simple'];
+        const preview = document.getElementById('grammar-preview');
+        if (preview) {
+            preview.innerHTML = `<strong style="font-size: 1.1rem; color: var(--primary-color); display: block; margin-bottom: 10px;">${topic.title}</strong><div style="line-height: 1.8; font-size: 0.9rem;">${topic.content}</div>`;
+        }
+    }
+
+    function toggleGrammarPanel() {
+        const grammarPanel = document.getElementById('grammar-panel');
+        const parserPanel = document.getElementById('parser-panel');
+        grammarPanel.classList.toggle('active');
+        parserPanel.classList.remove('active');
+        if (grammarPanel.classList.contains('active')) {
+            showGrammarTopic('present-simple');
+        }
+    }
+
     function togglePanel() {
-        document.getElementById("parser-panel").classList.toggle("active");
+        const panel = document.getElementById("parser-panel");
+        const grammarPanel = document.getElementById('grammar-panel');
+        panel.classList.toggle("active");
+        grammarPanel.classList.remove('active');
     }
 
     // ประมวลผลดึงข้อความคัดกรองคำซ้ำอัตโนมัติจากผู้ใช้
