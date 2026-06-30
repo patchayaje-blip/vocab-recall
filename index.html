@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <!-- 💡 แก้ไขจุดที่ 1: ล็อกสเกลหน้าจอของ iOS WebKit ไม่ให้ซูมเข้าออกเวลาใช้นิ้วกดรัว ๆ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOEIC & THAI-TEP Ultimate Vocab App</title>
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --primary-hover: #1557b0;
+            --secondary-color: #ff9800;
+            --secondary-hover: #e68a00;
+            --success-color: #34a853;
+            --bg-color: #f4f6f9;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --card-bg: #ffffff;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+
+        *:focus {
+            outline: none !important;
+        }
+        
+        .btn, .flashcard-wrapper, .card {
+            -webkit-tap-highlight-color: transparent !important;
+            outline: none !important;
+        }
+
+        body {
+            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            color: #111;
+            margin: 0 0 5px 0;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin: 0;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: var(--text-sub);
+            background: rgba(255,255,255,0.6);
+            padding: 8px 15px;
+            border-radius: 30px;
+        }
+
+        .flashcard-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            height: 280px;
+            margin-bottom: 25px;
+            cursor: pointer;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border-radius: 20px;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            background: var(--card-bg);
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* 💡 แก้ไขจุดที่ 2: เคลียร์การย่อหน้า พิมพ์เยื้อง และล็อกโครงสร้างปิดขอบของการ์ด */
+        .card-front {
+            border: none !important;
+            background: var(--card-bg);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background-color: #ffffff !important;
+            border: none !important;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent !important;
+            -webkit-user-select: none !important;
+            outline: none !important;
+            /* 💡 ไม้ตายล็อกหน้าจอนิ่ง: ปิดคำสั่ง Double-tap to zoom ของ iOS ไม่ให้หน้าจอสั่นยืดหด */
+            touch-action: manipulation !important;
+        }
+
+        .flashcard-wrapper, .flashcard, .card-face {
+            outline: none !important;
+            -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+        }
+
+        .word-eng {
+            font-size: 2.4rem;
+            color: var(--primary-color);
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            word-break: break-word;
+        }
+
+        .word-hint {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            border: 1px dashed #ccc;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .word-thai {
+            font-size: 1.8rem;
+            color: #222;
+            font-weight: 600;
+            margin: 0;
+            word-break: break-word;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn-nav {
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid #d1d5da;
+        }
+
+        .btn-nav:hover {
+            background-color: #f6f8fa;
+        }
+
+        .btn-audio {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-audio:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        .extra-controls {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .btn-sub {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.85rem;
+            background-color: #e4e6eb;
+            color: #050505;
+            border-radius: 8px;
+        }
+
+        .btn-sub:hover {
+            background-color: #d8dadf;
+        }
+
+        /* Parser Panel Styles */
+        .panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            box-sizing: border-box;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #ccd0d5;
+            border-radius: 8px;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .panel-btns {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-action {
+            background-color: var(--success-color);
+            color: white;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>TOEIC & THAI-TEP Smart Recall</h1>
+        <p>คลังจำศัพท์อัจฉริยะ ล้างคำซ้ำพร้อมป้อนเสียงอ่าน</p>
+    </header>
+
+    <div class="stats-bar">
+        <span id="card-counter">กำลังโหลด...</span>
+        <span id="deck-source" style="font-size: 0.75rem; background: #e8f0fe; color: var(--primary-color); padding: 2px 8px; border-radius: 10px;">คลังเริ่มต้น</span>
+    </div>
+
+    <div class="flashcard-wrapper" onclick="flipCard()">
+        <div class="flashcard" id="card-element">
+            <div class="card-face card-front">
+                <div class="word-eng" id="word-eng">Loading</div>
+                <div class="word-hint">คลิกเพื่อดูคำแปล 👆</div>
+            </div>
+            <div class="card-face card-back">
+                <div class="word-thai" id="word-thai">กำลังโหลด</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-nav" onclick="prevWord(event)">⬅️ ถอยกลับ</button>
+        <button class="btn btn-audio" onclick="speakWord(event)">🔊 ฟังเสียง</button>
+        <button class="btn btn-nav" onclick="nextWord(event)">ถัดไป ➡️</button>
+    </div>
+
+    <div class="extra-controls">
+        <button class="btn btn-sub" onclick="shuffleDeck()">🔀 สลับการ์ด</button>
+        <button class="btn btn-sub" onclick="togglePanel()">⚙️ จัดการ/เพิ่มคำศัพท์</button>
+        <button class="btn btn-sub" id="btn-reset" onclick="resetToDefault()">🔄 รีเซ็ตคลัง</button>
+    </div>
+
+    <div class="panel" id="parser-panel">
+        <h3>➕ แผงคัดลอกข้อความเพิ่มศัพท์อัจฉริยะ</h3>
+        <p style="font-size: 0.8rem; color: var(--text-sub); margin: 0 0 10px 0;">
+            คุณสามารถก๊อปปี้บรรทัดข้อความคำศัพท์จากไฟล์ PDF มาวางในช่องนี้ได้เลย (เช่น "ability - ความสามารถ") ระบบจะคัดกรองคำซ้ำให้อัตโนมัติ!
+        </p>
+        <textarea id="import-input" placeholder="วางคำศัพท์ตรงนี้ได้ไม่จำกัดบรรทัด เช่น&#10;airplane - เครื่องบิน&#10;baggage - สัมภาระ"></textarea>
+        <div class="panel-btns">
+            <button class="btn btn-action" onclick="processImport()">กรองและนำเข้าคลังสมาท</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ฐานข้อมูลคำศัพท์แบบลบคำซ้ำ (Deduplicated Core Database) 660+ คำจากไฟล์ของคุณ
+    const defaultVocab = [
+        {"en": "terminal", "th": "อาคารผู้โดยสาร"},
+        {"en": "runway", "th": "ทางวิ่งของเครื่องบิน"},
+        {"en": "boarding gate", "th": "ประตูขึ้นเครื่อง"},
+        {"en": "check-in counter", "th": "เคาน์เตอร์เช็คอิน"},
+        {"en": "baggage claim", "th": "จุดรับสัมภาระ"},
+        {"en": "customs", "th": "ด่านศุลกากร / ศุลกากร"},
+        {"en": "security check", "th": "จุดตรวจความปลอดภัย"},
+        {"en": "duty-free", "th": "ปลอดภาษี"},
+        {"en": "departure", "th": "การออกเดินทาง"},
+        {"en": "arrival", "th": "การมาถึง"},
+        {"en": "turbulence", "th": "การสั่นสะเทือนในอากาศ / ความปั่นป่วนอากาศ"},
+        {"en": "altitude", "th": "ความสูงเหนือระดับน้ำทะเล"},
+        {"en": "cockpit", "th": "ห้องนักบิน"},
+        {"en": "flight attendant", "th": "พนักงานต้อนรับบนเครื่องบิน"},
+        {"en": "cabin crew", "th": "ลูกเรือ / พนักงานต้อนรับบนเครื่องบิน"},
+        {"en": "airline", "th": "สายการบิน"},
+        {"en": "passenger", "th": "ผู้โดยสาร"},
+        {"en": "boarding pass", "th": "บัตรขึ้นเครื่องบิน"},
+        {"en": "carry-on luggage", "th": "สัมภาระถือขึ้นเครื่อง"},
+        {"en": "checked baggage", "th": "สัมภาระโหลดใต้เครื่อง"},
+        {"en": "overbooked", "th": "จองเกินจำนวนที่นั่ง"},
+        {"en": "emergency exit", "th": "ทางออกฉุกเฉิน"},
+        {"en": "itinerary", "th": "แผนการเดินทาง / กำหนดการเดินทาง"},
+        {"en": "connecting flight", "th": "เที่ยวบินต่อเครื่อง"},
+        {"en": "layover", "th": "การแวะพักระหว่างทาง"},
+        {"en": "jet lag", "th": "อาการเหนื่อยล้าจากการเดินทางไกล"},
+        {"en": "immigration", "th": "การตรวจคนเข้าเมือง / ด่านตรวจคนเข้าเมือง"},
+        {"en": "passport control", "th": "ด่านตรวจหนังสือเดินทาง"},
+        {"en": "lost and found", "th": "จุดรับแจ้งของหาย"},
+        {"en": "ability", "th": "ความสามารถ"},
+        {"en": "abroad", "th": "ในต่างประเทศ"},
+        {"en": "absolutely", "th": "อย่างแน่นอน"},
+        {"en": "accept", "th": "ยอมรับ"},
+        {"en": "access", "th": "การเข้าถึง / เข้าถึง"},
+        {"en": "accommodate", "th": "รองรับ / จัดให้เหมาะสม"},
+        {"en": "accomplish", "th": "ทำให้สำเร็จ"},
+        {"en": "accurate", "th": "แม่นยำ"},
+        {"en": "achieve", "th": "บรรลุผล"},
+        {"en": "acquire", "th": "ได้มา"},
+        {"en": "additional", "th": "เพิ่มเติม"},
+        {"en": "adequate", "th": "เพียงพอ"},
+        {"en": "adjust", "th": "ปรับ / ปรับเปลี่ยน"},
+        {"en": "administration", "th": "การบริหาร"},
+        {"en": "admire", "th": "ชื่นชม"},
+        {"en": "advance", "th": "ความก้าวหน้า / ล่วงหน้า"},
+        {"en": "advantage", "th": "ข้อได้เปรียบ"},
+        {"en": "advertise", "th": "โฆษณา"},
+        {"en": "advice", "th": "คำแนะนำ"},
+        {"en": "affect", "th": "ส่งผลกระทบ"},
+        {"en": "affordable", "th": "ราคาไม่แพง"},
+        {"en": "agenda", "th": "ระเบียบวาระการประชุม"},
+        {"en": "agreement", "th": "ข้อตกลง"},
+        {"en": "allow", "th": "อนุญาต"},
+        {"en": "alternative", "th": "ทางเลือก / ที่เป็นทางเลือก"},
+        {"en": "amend", "th": "แก้ไข (เอกสาร / กฎหมาย)"},
+        {"en": "analysis", "th": "การวิเคราะห์"},
+        {"en": "analyze", "th": "วิเคราะห์"},
+        {"en": "announcement", "th": "การประกาศ"},
+        {"en": "annual", "th": "ประจำปี"},
+        {"en": "anticipate", "th": "คาดการณ์"},
+        {"en": "apologize", "th": "ขอโทษ"},
+        {"en": "appliance", "th": "เครื่องใช้ไฟฟ้า"},
+        {"en": "applicant", "th": "ผู้สมัคร"},
+        {"en": "application", "th": "ใบสมัคร / การใช้งาน"},
+        {"en": "apply", "th": "สมัคร / ใช้"},
+        {"en": "appoint", "th": "แต่งตั้ง"},
+        {"en": "appointment", "th": "การนัดหมาย"},
+        {"en": "appreciate", "th": "ซาบซึ้ง / ขอบคุณ"},
+        {"en": "approach", "th": "เข้าหา / วิธีการ / แนวทาง"},
+        {"en": "appropriate", "th": "เหมาะสม"},
+        {"en": "approve", "th": "อนุมัติ"},
+        {"en": "arrange", "th": "จัดเตรียม"},
+        {"en": "assemble", "th": "รวมตัว / ประกอบ"},
+        {"en": "assess", "th": "ประเมิน"},
+        {"en": "assets", "th": "สินทรัพย์"},
+        {"en": "assign", "th": "มอบหมาย"},
+        {"en": "assist", "th": "ช่วยเหลือ"},
+        {"en": "assume", "th": "สมมุติ / คิดว่า"},
+        {"en": "attach", "th": "แนบ"},
+        {"en": "attend", "th": "เข้าร่วม"},
+        {"en": "attentively", "th": "อย่างตั้งใจ"},
+        {"en": "attract", "th": "ดึงดูด"},
+        {"en": "audience", "th": "ผู้ชม / ผู้ฟัง"},
+        {"en": "audit", "th": "ตรวจสอบบัญชี / การตรวจสอบ"},
+        {"en": "authority", "th": "อำนาจ / หน่วยงาน"},
+        {"en": "available", "th": "ที่มีอยู่ / ว่าง"},
+        {"en": "avoid", "th": "หลีกเลี่ยง"},
+        {"en": "awareness", "th": "การตระหนักรู้"},
+        {"en": "background", "th": "พื้นหลัง / ประวัติ"},
+        {"en": "balance", "th": "ยอดคงเหลือ / ทำให้สมดุล"},
+        {"en": "bankrupt", "th": "ล้มละลาย"},
+        {"en": "bargain", "th": "ของราคาถูก / ต่อรองราคา"},
+        {"en": "beneficial", "th": "เป็นประโยชน์"},
+        {"en": "beverage", "th": "เครื่องดื่ม"},
+        {"en": "boardroom", "th": "ห้องประชุมของคณะกรรมการ"},
+        {"en": "boost", "th": "เพิ่ม / การกระตุ้น"},
+        {"en": "budget", "th": "งบประมาณ / จัดงบ"},
+        {"en": "candidate", "th": "ผู้สมัคร"},
+        {"en": "capacity", "th": "ความจุ / ความสามารถ"},
+        {"en": "career", "th": "อาชีพ"},
+        {"en": "cashier", "th": "พนักงานแคชเชียร์"},
+        {"en": "cautious", "th": "ระมัดระวัง"},
+        {"en": "certificate", "th": "ใบรับรอง"},
+        {"en": "circumstances", "th": "สถานการณ์ / เงื่อนไข"},
+        {"en": "claim", "th": "เรียกร้อง / การเรียกร้อง"},
+        {"en": "client", "th": "ลูกค้า (ทางบริการ)"},
+        {"en": "colleague", "th": "เพื่อนร่วมงาน"},
+        {"en": "commence", "th": "เริ่มต้น"},
+        {"en": "commission", "th": "ค่าคอมมิชชัน / คณะกรรมการ"},
+        {"en": "committee", "th": "คณะกรรมการ"},
+        {"en": "commute", "th": "เดินทางไปกลับ / เดินทางไปกลับที่ทำงาน"},
+        {"en": "company", "th": "บริษัท"},
+        {"en": "compare", "th": "เปรียบเทียบ"},
+        {"en": "compensate", "th": "ชดเชย"},
+        {"en": "competent", "th": "มีความสามารถ"},
+        {"en": "competition", "th": "การแข่งขัน"},
+        {"en": "complain", "th": "ร้องเรียน / บ่น"},
+        {"en": "complimentary", "th": "ฟรี / เป็นการชมเชย"},
+        {"en": "comply", "th": "ปฏิบัติตาม (กฎ/ข้อบังคับ)"},
+        {"en": "comprehensive", "th": "ครอบคลุม"},
+        {"en": "compromise", "th": "การประนีประนอม / ประนีประนอม"},
+        {"en": "compulsory", "th": "จำเป็น / บังคับ"},
+        {"en": "conclude", "th": "สรุป"},
+        {"en": "condition", "th": "เงื่อนไข / สภาพ"},
+        {"en": "conduct", "th": "ดำเนินการ / ความประพฤติ"},
+        {"en": "confirm", "th": "ยืนยัน"},
+        {"en": "consequence", "th": "ผลที่ตามมา"},
+        {"en": "considerable", "th": "มากมาย / สำคัญ"},
+        {"en": "consignment", "th": "การส่งสินค้า"},
+        {"en": "consistent", "th": "สม่ำเสมอ"},
+        {"en": "constant", "th": "คงที่ / ไม่เปลี่ยนแปลง"},
+        {"en": "construction", "th": "การก่อสร้าง"},
+        {"en": "consultant", "th": "ที่ปรึกษา"},
+        {"en": "consume", "th": "บริโภค"},
+        {"en": "container", "th": "ภาชนะ / ตู้คอนเทนเนอร์"},
+        {"en": "contribute", "th": "มีส่วนร่วม / บริจาค / มีส่วนช่วย"},
+        {"en": "convenient", "th": "สะดวก"},
+        {"en": "convince", "th": "โน้มน้าว"},
+        {"en": "corporate", "th": "เกี่ยวกับบริษัท"},
+        {"en": "cost", "th": "ค่าใช้จ่าย / มีราคา / ค่าขนส่ง"},
+        {"en": "courier", "th": "คนส่งของ / บริษัทขนส่ง"},
+        {"en": "coworker", "th": "เพื่อนร่วมงาน"},
+        {"en": "credentials", "th": "หลักฐานแสดงคุณสมบัติ"},
+        {"en": "criteria", "th": "เกณฑ์"},
+        {"en": "critical", "th": "สำคัญมาก / วิกฤต"},
+        {"en": "crucial", "th": "สำคัญมาก"},
+        {"en": "currency", "th": "สกุลเงิน"},
+        {"en": "current", "th": "ปัจจุบัน"},
+        {"en": "customer", "th": "ลูกค้า"},
+        {"en": "deadline", "th": "เส้นตาย / กำหนดเวลา / กำหนดส่ง"},
+        {"en": "decrease", "th": "ลดลง / การลดลง"},
+        {"en": "deduct", "th": "หักออก"},
+        {"en": "defect", "th": "ข้อบกพร่อง"},
+        {"en": "defective", "th": "ชำรุด / มีข้อบกพร่อง"},
+        {"en": "definitely", "th": "อย่างแน่นอน"},
+        {"en": "delay", "th": "ล่าช้า / ความล่าช้า / เลื่อนเวลา"},
+        {"en": "deliver", "th": "ส่ง / ส่งมอบ"},
+        {"en": "demand", "th": "ความต้องการ / เรียกร้อง"},
+        {"en": "demonstrate", "th": "สาธิต / แสดงให้เห็น"},
+        {"en": "department", "th": "แผนก / ฝ่าย"},
+        {"en": "deposit", "th": "เงินมัดจำ / ฝากเงิน"},
+        {"en": "description", "th": "คำอธิบาย"},
+        {"en": "destination", "th": "จุดหมายปลายทาง"},
+        {"en": "detailed", "th": "ละเอียด"},
+        {"en": "detect", "th": "ตรวจจับ"},
+        {"en": "determine", "th": "ตัดสินใจ / กำหนด"},
+        {"en": "develop", "th": "พัฒนา"},
+        {"en": "device", "th": "อุปกรณ์"},
+        {"en": "diagnose", "th": "วินิจฉัย (โรค)"},
+        {"en": "director", "th": "ผู้อำนวยการ"},
+        {"en": "discount", "th": "ส่วนลด / ลดราคา"},
+        {"en": "discrepancy", "th": "ความไม่ตรงกัน"},
+        {"en": "discuss", "th": "สนทนา / ถกเถียง"},
+        {"en": "dismiss", "th": "ไล่ออก / เลิก"},
+        {"en": "display", "th": "แสดง / การแสดง"},
+        {"en": "disposable", "th": "ใช้แล้วทิ้งได้"},
+        {"en": "dispute", "th": "ข้อพิพาท / โต้แย้ง"},
+        {"en": "disruption", "th": "การขัดจังหวะ / ความปั่นป่วน"},
+        {"en": "distinguish", "th": "แยกแยะ / ทำให้แตกต่าง"},
+        {"en": "distribute", "th": "แจกจ่าย / กระจาย"},
+        {"en": "dividend", "th": "เงินปันผล"},
+        {"en": "document", "th": "เอกสาร / เอกสารการเดินทาง"},
+        {"en": "donate", "th": "บริจาค"},
+        {"en": "downsize", "th": "ลดขนาด / ปรับลด"},
+        {"en": "downturn", "th": "ช่วงตกต่ำ / ภาวะถดถอย"},
+        {"en": "dramatic", "th": "น่าทึ่ง / ใหญ่โต"},
+        {"en": "drastic", "th": "รุนแรง / อย่างมาก"},
+        {"en": "duration", "th": "ระยะเวลา"},
+        {"en": "earn", "th": "ได้รับ (เงิน/รายได้)"},
+        {"en": "economical", "th": "ประหยัด"},
+        {"en": "economy", "th": "เศรษฐกิจ / ชั้นประหยัด"},
+        {"en": "effective", "th": "มีประสิทธิผล"},
+        {"en": "efficiency", "th": "ประสิทธิภาพ"},
+        {"en": "efficient", "th": "มีประสิทธิภาพ"},
+        {"en": "elderly", "th": "สูงวัย / ผู้สูงอายุ"},
+        {"en": "elevator", "th": "ลิฟต์"},
+        {"en": "embark", "th": "ขึ้นเรือ / เริ่มต้น (โครงการ)"},
+        {"en": "emergency", "th": "เหตุฉุกเฉิน"},
+        {"en": "emphasize", "th": "เน้นย้ำ"},
+        {"en": "employee", "th": "พนักงาน"},
+        {"en": "employer", "th": "นายจ้าง"},
+        {"en": "enable", "th": "ทำให้สามารถ"},
+        {"en": "comfortable", "th": "แนบ / ปิดล้อม"},
+        {"en": "encourage", "th": "ให้กำลังใจ / สนับสนุน"},
+        {"en": "endure", "th": "อดทน"},
+        {"en": "engineer", "th": "วิศวกร / วางแผนออกแบบ"},
+        {"en": "enhance", "th": "เพิ่ม / เสริมให้ดีขึ้น"},
+        {"en": "enroll", "th": "ลงทะเบียน"},
+        {"en": "ensure", "th": "ทำให้มั่นใจ"},
+        {"en": "enterprise", "th": "วิสาหกิจ / ธุรกิจ"},
+        {"en": "enthusiastic", "th": "กระตือรือร้น"},
+        {"en": "entitlement", "th": "สิทธิ์ที่พึงได้"},
+        {"en": "environment", "th": "สิ่งแวดล้อม"},
+        {"en": "equivalent", "th": "เท่ากัน / สิ่งที่เทียบเท่า"},
+        {"en": "essential", "th": "จำเป็น"},
+        {"en": "estimate", "th": "ประเมิน / การประมาณการ"},
+        {"en": "evaluate", "th": "ประเมินผล"},
+        {"en": "evidence", "th": "หลักฐาน"},
+        {"en": "evolve", "th": "วิวัฒนาการ / พั่นนา"},
+        {"en": "exceed", "th": "เกิน / เกินความคาดหวัง"},
+        {"en": "executive", "th": "ผู้บริหาร / เกี่ยวกับผู้บริหาร"},
+        {"en": "exhibit", "th": "แสดง / นิทรรศการ"},
+        {"en": "expand", "th": "ขยาย / ขยายตลาด"},
+        {"en": "expect", "th": "คาดหวัง"},
+        {"en": "expenditure", "th": "ค่าใช้จ่าย"},
+        {"en": "expense", "th": "ค่าใช้จ่าย"},
+        {"en": "experience", "th": "ประสบการณ์ / ประสบ"},
+        {"en": "experiment", "th": "การทดลอง / ทดลอง"},
+        {"en": "explore", "th": "สำรวจ / ค้นหา"},
+        {"en": "express", "th": "แสดงความรู้สึก / ด่วน"},
+        {"en": "extend", "th": "ขยาย / ยืดเวลา"},
+        {"en": "external", "th": "ภายนอก"},
+        {"en": "facilities", "th": "สิ่งอำนวยความสะดวก"},
+        {"en": "factor", "th": "ปัจจัย"},
+        {"en": "factory", "th": "โรงงาน"},
+        {"en": "fail", "th": "ล้มเหลว"},
+        {"en": "fare", "th": "ค่าโดยสาร"},
+        {"en": "faulty", "th": "ชำรุด / บกพร่อง"},
+        {"en": "feedback", "th": "ข้อเสนอแนะ / รับฟังความคิดเห็น"},
+        {"en": "financial", "th": "ทางการเงิน / ผลประกอบการ"},
+        {"en": "flexible", "th": "ยืดหยุ่น / ปรับเปลี่ยนได้"},
+        {"en": "fluctuate", "th": "ผันผวน"},
+        {"en": "focus", "th": "มุ่งเน้น / จุดสนใจ"},
+        {"en": "forecast", "th": "การพยากรณ์ / พยากรณ์"},
+        {"en": "foreign", "th": "ต่างประเทศ / การแลกเปลี่ยนเงิน"},
+        {"en": "forward", "th": "ส่งต่อ / ข้างหน้า"},
+        {"en": "founded", "th": "ก่อตั้ง"},
+        {"en": "frankly", "th": "อย่างตรงไปตรงมา"},
+        {"en": "fuel", "th": "เชื้อเพลิง / เติมพลัง / ถังน้ำมัน"},
+        {"en": "fulfill", "th": "ทำให้สำเร็จ / ทำให้เป็นจริง"},
+        {"en": "function", "th": "หน้าที่ / ทำหน้าที่ / ใช้การได้"},
+        {"en": "fundraising", "th": "การระดมทุน / ระดมทุน"},
+        {"en": "furniture", "th": "เฟอร์นิเจอร์"},
+        {"en": "further", "th": "เพิ่มเติม / ต่อไป / ส่งเสริม"},
+        {"en": "garlic", "th": "กระเทียม"},
+        {"en": "gesture", "th": "ท่าทาง / อิริยาบถ"},
+        {"en": "goal", "th": "เป้าหมาย"},
+        {"en": "goods", "th": "สินค้า / สินค้าเน่าเสียง่าย"},
+        {"en": "gradually", "th": "อย่างค่อยเป็นค่อยไป"},
+        {"en": "grievance", "th": "ความไม่พอใจ / ข้อร้องเรียน"},
+        {"en": "growth", "th": "การเติบโต / การเติบโตประจำปี"},
+        {"en": "guarantee", "th": "การรับประกัน / รับประกัน"},
+        {"en": "guidelines", "th": "แนวทาง / ข้อแนะนำ"},
+        {"en": "handle", "th": "จัดการ / มือจับ / จัดการหรือรับมือ"},
+        {"en": "handy", "th": "ใช้งานสะดวก / พกพาสะดวก"},
+        {"en": "harbor", "th": "ท่าเรือ / ให้ที่พักพิง"},
+        {"en": "hazardous", "th": "อันตราย / เสี่ยง / วัสดุอันตราย"},
+        {"en": "headquarters", "th": "สำนักงานใหญ่"},
+        {"en": "hesitate", "th": "ลังเล"},
+        {"en": "highlight", "th": "เน้น / จุดเด่น"},
+        {"en": "highly", "th": "อย่างมาก / อย่างสูง"},
+        {"en": "hire", "th": "จ้าง / การจ้าง / จ้างพนักงาน"},
+        {"en": "host", "th": "เจ้าภาพ / จัดงาน / โฮสต์"},
+        {"en": "identification", "th": "บัตรประจำตัว / การระบุ"},
+        {"en": "immediate", "th": "ทันที / เร่งด่วน"},
+        {"en": "impact", "th": "ผลกระทบ / ส่งผลกระทบต่อ"},
+        {"en": "impatient", "th": "ใจร้อน / ขาดความอดทน"},
+        {"en": "implement", "th": "ดำเนินการ / เครื่องมือ / นำนโยบายไปใช้"},
+        {"en": "imply", "th": "บ่งบอก / มีนัยว่า"},
+        {"en": "impression", "th": "ความประทับใจ"},
+        {"en": "improper", "th": "ไม่เหมาะสม"},
+        {"en": "improve", "th": "ปรับปรุง"},
+        {"en": "incentive", "th": "สิ่งจูงใจ"},
+        {"en": "inclined", "th": "มีแนวโน้ม"},
+        {"en": "include", "th": "รวม"},
+        {"en": "income", "th": "รายได้ / สร้างรายได้"},
+        {"en": "inconvenience", "th": "ความไม่สะดวก / ทำให้ลำบาก"},
+        {"en": "increase", "th": "เพิ่ม / การเพิ่ม / เพิ่มยอดขาย"},
+        {"en": "indicate", "th": "แสดง / ชี้ให้เห็น"},
+        {"en": "individual", "th": "บุคคล / แต่ละราย"},
+        {"en": "infer", "th": "สรุปความ / อนุมาน"},
+        {"en": "inflation", "th": "ภาวะเงินเฟ้อ"},
+        {"en": "influence", "th": "อิทธิพล / มีอิทธิพล"},
+        {"en": "information", "th": "ข้อมูล / ป้อนข้อมูล"},
+        {"en": "inquiry", "th": "การสอบถาม"},
+        {"en": "install", "th": "ติดตั้ง / การติดตั้ง"},
+        {"en": "insurance", "th": "ประกันภัย / ประกันการเดินทาง"},
+        {"en": "intend", "th": "ตั้งใจ / ความตั้งใจ"},
+        {"en": "internship", "th": "การฝึกงาน / เด็กฝึกงาน"},
+        {"en": "interrupt", "th": "ขัดจังหวะ"},
+        {"en": "interview", "th": "การสัมภาษณ์ / สัมภาษณ์"},
+        {"en": "invaluable", "th": "มีค่ามาก / ประเมินค่าไม่ได้"},
+        {"en": "invent", "th": "ประดิษฐ์ / คิดค้น"},
+        {"en": "inventory", "th": "สินค้าคงคลัง / รายการสินค้า"},
+        {"en": "invest", "th": "ลงทุน / การลงทุน"},
+        {"en": "investigate", "th": "สืบสวน / ตรวจสอบ"},
+        {"en": "invoice", "th": "ใบแจ้งหนี้"},
+        {"en": "isolate", "th": "แยก / กักตัว"},
+        {"en": "issue", "th": "ประเด็น / ปัญหา / ออกใบแจ้ง"},
+        {"en": "item", "th": "รายการ / แยกรายการ"},
+        {"en": "jealous", "th": "อิจฉา"},
+        {"en": "jeopardize", "th": "ทำให้ตกอยู่ในอันตราย"},
+        {"en": "jobless", "th": "ว่างงาน / ไม่มีงานทำ"},
+        {"en": "join", "th": "เข้าร่วม"},
+        {"en": "journal", "th": "วารสาร / สมุดบันทึก"},
+        {"en": "journey", "th": "การเดินทาง"},
+        {"en": "judge", "th": "ผู้พิพากษา / ตัดสิน"},
+        {"en": "justice", "th": "ความยุติธรรม"},
+        {"en": "justification", "th": "เหตุผล / การให้เหตุผล"},
+        {"en": "keen", "th": "กระตือรือร้น / สนใจมาก"},
+        {"en": "knowledgeable", "th": "มีความรู้"},
+        {"en": "label", "th": "ฉลาก / ติดฉลาก"},
+        {"en": "labor", "th": "แรงงาน"},
+        {"en": "lack", "th": "ขาด / การขาด"},
+        {"en": "landlord", "th": "เจ้าของบ้าน / เจ้าของที่ดิน"},
+        {"en": "launch", "th": "เปิดตัว / การเปิดตัวสินค้า"},
+        {"en": "law", "th": "กฎหมาย"},
+        {"en": "lay off", "th": "ปลดออกจากงาน / ถูกปลดออก"},
+        {"en": "leak", "th": "รั่ว / การรั่ว"},
+        {"en": "lease", "th": "สัญญาเช่า / ให้เช่า"},
+        {"en": "leisure", "th": "เวลาว่าง"},
+        {"en": "lend", "th": "ให้ยืม"},
+        {"en": "liability", "th": "ความรับผิดชอบ"},
+        {"en": "license", "th": "ใบอนุญาต / ใบขับขี่"},
+        {"en": "limited", "th": "จำกัด"},
+        {"en": "limousine", "th": "รถลิมูซีน"},
+        {"en": "livestock", "th": "ปศุสัตว์"},
+        {"en": "loan", "th": "เงินกู้ / ให้ยืม"},
+        {"en": "local", "th": "ท้องถิ่น"},
+        {"en": "locate", "th": "หาตำแหน่ง / ตั้งอยู่"},
+        {"en": "loyal", "th": "ซื่อสัตย์ / ภักดี"},
+        {"en": "luxurious", "th": "หรูหรา / ความหรูหรา"},
+        {"en": "maintain", "th": "บำรุงรักษา / รักษาไว้"},
+        {"en": "maintenance", "th": "การบำรุงรักษา"},
+        {"en": "major", "th": "สำคัญ / วิชาเอก"},
+        {"en": "manage", "th": "จัดการ / บริหารจัดการ"},
+        {"en": "mandatory", "th": "จำเป็น / บังคับ"},
+        {"en": "manufacture", "th": "ผลิต / กระบวนการผลิต"},
+        {"en": "marketing", "th": "การตลาด"},
+        {"en": "mechanic", "th": "ช่างยนต์"},
+        {"en": "medication", "th": "ยารักษาโรค / ยาเม็ด"},
+        {"en": "membership", "th": "การเป็นสมาชิก"},
+        {"en": "memorandum", "th": "บันทึกข้อความ"},
+        {"en": "merchandise", "th": "สินค้า"},
+        {"en": "merge", "th": "รวม / ควบรวมกิจการ"},
+        {"en": "mileage", "th": "ระยะทางที่เดินทาง / ไมล์สะสม"},
+        {"en": "misleading", "th": "ชวนให้เข้าใจผิด"},
+        {"en": "misrepresent", "th": "บิดเบือน / รายงานผิด"},
+        {"en": "monitor", "th": "ติดตาม / จอภาพ"},
+        {"en": "monument", "th": "อนุสาวรีย์"},
+        {"en": "mortgage", "th": "การจำนอง / จำนอง"},
+        {"en": "motivate", "th": "กระตุ้น / สร้างแรงจูงใจ"},
+        {"en": "napkin", "th": "ผ้าเช็ดปาก"},
+        {"en": "narrowing", "th": "การทำให้แคบลง / แคบ"},
+        {"en": "neighborhood", "th": "ละแวก / บริเวณใกล้เคียง"},
+        {"en": "network", "th": "เครือข่าย"},
+        {"en": "nominate", "th": "เสนอชื่อ / แต่งตั้ง"},
+        {"en": "notice", "th": "ประกาศ / สังเกตเห็น"},
+        {"en": "notify", "th": "แจ้ง / แจ้งให้ทราบ"},
+        {"en": "objection", "th": "การคัดค้าน / ข้อโต้แย้ง"},
+        {"en": "objective", "th": "เป้าหมาย / อย่างเป็นกลาง"},
+        {"en": "obligation", "th": "ข้อผูกพัน / หน้าที่"},
+        {"en": "obtain", "th": "ได้รับ"},
+        {"en": "obviously", "th": "อย่างชัดเจน"},
+        {"en": "occupation", "th": "อาชีพ"},
+        {"en": "occur", "th": "เกิดขึ้น"},
+        {"en": "officer", "th": "เจ้าหน้าที่ / เป็นทางการ"},
+        {"en": "onward", "th": "จากนี้ไป / ข้างหน้า"},
+        {"en": "operate", "th": "ปฏิบัติงาน / ดำเนินการ"},
+        {"en": "opinion", "th": "ความคิดเห็น"},
+        {"en": "opportunity", "th": "โอกาส"},
+        {"en": "optimistic", "th": "มองในแง่ดี"},
+        {"en": "order", "th": "คำสั่ง / สั่งซื้อ"},
+        {"en": "organization", "th": "องค์กร / จัดระเบียบ"},
+        {"en": "original", "th": "ดั้งเดิม / ต้นฉบับ"},
+        {"en": "outline", "th": "โครงร่าง / สรุป"},
+        {"en": "outlook", "th": "มุมมอง / แนวโน้ม"},
+        {"en": "outstanding", "th": "โดดเด่น / ค้างชำระ"},
+        {"en": "overall", "th": "โดยรวม / ทั้งหมด"},
+        {"en": "overdraft", "th": "การถอนเงินเกินบัญชี"},
+        {"en": "overseas", "th": "ต่างประเทศ"},
+        {"en": "overtime", "th": "การทำงานล่วงเวลา"},
+        {"en": "owe", "th": "เป็นหนี้"},
+        {"en": "package", "th": "แพ็กเกจ / พัสดุ / ทัวร์แพ็กเกจ"},
+        {"en": "parcel", "th": "พัสดุ"},
+        {"en": "parking lot", "th": "ลานจอดรถ"},
+        {"en": "participant", "th": "ผู้เข้าร่วม"},
+        {"en": "particularly", "th": "โดยเฉพาะ"},
+        {"en": "patent", "th": "สิทธิบัตร / จดสิทธิบัตร"},
+        {"en": "patience", "th": "ความอดทน"},
+        {"en": "payment", "th": "การชำระเงิน"},
+        {"en": "perform", "th": "แสดง / ปฏิบัติ / ผลการดำเนินงาน"},
+        {"en": "permanent", "th": "ถาวร"},
+        {"en": "permission", "th": "การอนุญาต / ใบอนุญาต"},
+        {"en": "personal", "th": "ส่วนตัว / เฉพาะบุคคล"},
+        {"en": "personnel", "th": "บุคลากร"},
+        {"en": "persuade", "th": "ชักชวน / โน้มน้าว"},
+        {"en": "pessimistic", "th": "มองในแง่ร้าย"},
+        {"en": "plant", "th": "โรงงาน / พืช / ปลูก"},
+        {"en": "platform", "th": "ชานชาลา / แพลตฟอร์ม"},
+        {"en": "pleasant", "th": "น่าพอใจ"},
+        {"en": "plumber", "th": "ช่างประปา"},
+        {"en": "pointless", "th": "ไร้ประโยชน์"},
+        {"en": "policy", "th": "นโยบาย"},
+        {"en": "polite", "th": "สุภาพ"},
+        {"en": "politician", "th": "นักการเมือง / การเมือง"},
+        {"en": "poll", "th": "การสำรวจ / สำรวจความคิดเห็น"},
+        {"en": "pollute", "th": "ทำให้เกิดมลพิษ / มลพิษ"},
+        {"en": "popular", "th": "เป็นที่นิยม / ความนิยม"},
+        {"en": "position", "th": "ตำแหน่ง"},
+        {"en": "postpone", "th": "เลื่อนออกไป / การเลื่อนออกไป"},
+        {"en": "potential", "th": "ที่มีศักยภาพ / ศักยภาพ"},
+        {"en": "power", "th": "พลัง / อำนาจ"},
+        {"en": "practical", "th": "ในทางปฏิบัติ / ใช้ได้จริง"},
+        {"en": "predict", "th": "ทำนาย / คาดเดาได้"},
+        {"en": "prefer", "th": "ชอบมากกว่า / ความชอบ"},
+        {"en": "premises", "th": "สถานที่ประกอบธุรกิจ"},
+        {"en": "prepare", "th": "เตรียม / การนำเสนอ"},
+        {"en": "press", "th": "สื่อ / กด"},
+        {"en": "prevent", "th": "ป้องกัน / การป้องกัน"},
+        {"en": "price", "th": "ราคา / ตั้งราคา / ประเมินค่าไม่ได้"},
+        {"en": "principal", "th": "หลัก / สำคัญที่สุด"},
+        {"en": "principle", "th": "หลักการ"},
+        {"en": "priority", "th": "ลำดับความสำคัญ"},
+        {"en": "private", "th": "ส่วนตัว"},
+        {"en": "probability", "th": "ความน่าจะเป็น / อาจจะ"},
+        {"en": "probationary", "th": "ชั่วคราว / อยู่ในช่วงทดลองงาน"},
+        {"en": "process", "th": "กระบวนการ / ดำเนินการ"},
+        {"en": "profession", "th": "อาชีพ / มืออาชีพ"},
+        {"en": "profile", "th": "โปรไฟล์ / ประวัติย่อ"},
+        {"en": "profit", "th": "กำไร / ความสามารถในการทำกำไร"},
+        {"en": "progress", "th": "ความก้าวหน้า / ก้าวหน้า"},
+        {"en": "prohibit", "th": "ห้าม"},
+        {"en": "project", "th": "โครงการ / คาดการณ์"},
+        {"en": "promote", "th": "ส่งเสริม / เลื่อนตำแหน่ง / โปรโมตแบรนด์"},
+        {"en": "promptly", "th": "อย่างทันที / ทันที"},
+        {"en": "properly", "th": "อย่างเหมาะสม"},
+        {"en": "property", "th": "ทรัพย์สิน / อสังหาริมทรัพย์"},
+        {"en": "protect", "th": "ปกป้อง / การปกป้อง"},
+        {"en": "publicity", "th": "การเผยแพร่ / การโฆษณา / ประชาสัมพันธ์"},
+        {"en": "purchase", "th": "ซื้อ / การซื้อ"},
+        {"en": "purpose", "th": "วัตถุประสงค์"},
+        {"en": "pursue", "th": "ติดตาม / ไล่ตาม / ดำเนินตาม"},
+        {"en": "qualification", "th": "คุณสมบัติ / มีคุณสมบัติ / ผ่านเกณฑ์"},
+        {"en": "questionnaire", "th": "แบบสอบถาม"},
+        {"en": "quotation", "th": "ใบเสนอราคา / คำพูดอ้างอิง"},
+        {"en": "raise", "th": "เพิ่มขึ้น / การขึ้นเงินเดือน / ระดมทุน"},
+        {"en": "range", "th": "ขอบเขต / แผ่ขยาย"},
+        {"en": "rare", "th": "หายาก"},
+        {"en": "rate", "th": "อัตรา / ประเมิน"},
+        {"en": "rational", "th": "มีเหตุผล"},
+        {"en": "raw materials", "th": "วัตถุดิบ"},
+        {"en": "reach", "th": "ไปถึง / การเอื้อมถึง / บรรลุเป้าหมาย"},
+        {"en": "realize", "th": "ตระหนัก / เข้าใจ"},
+        {"en": "rearrange", "th": "จัดใหม่"},
+        {"en": "reasonable", "th": "สมเหตุสมผล / อย่างสมเหตุสมผล"},
+        {"en": "receipt", "th": "ใบเสร็จ"},
+        {"en": "receive", "th": "ได้รับ"},
+        {"en": "recent", "th": "ล่าสุด / เมื่อไม่นานนี้"},
+        {"en": "reception", "th": "การต้อนรับ / แผนกต้อนรับ / เปิดรับ"},
+        {"en": "recipe", "th": "สูตรอาหาร"},
+        {"en": "recognize", "th": "จำได้ / รับรู้"},
+        {"en": "recommend", "th": "แนะนำ / คำแนะนำ"},
+        {"en": "recruit", "th": "รับสมัคร / การสรรหา / การรับสมัคร"},
+        {"en": "reduce", "th": "ลด / การลดลง / ลดค่าใช้จ่าย"},
+        {"en": "redundant", "th": "ซ้ำซ้อน / ถูกปลดออก"},
+        {"en": "refrigerator", "th": "ตู้เย็น"},
+        {"en": "refund", "th": "เงินคืน / คืนเงิน / คืนเงินได้"},
+        {"en": "refusal", "th": "การปฏิเสธ / ปฏิเสธ"},
+        {"en": "regarding", "th": "เกี่ยวกับ / โดยไม่คำนึงถึง"},
+        {"en": "regional", "th": "ในระดับภูมิภาค"},
+        {"en": "register", "th": "ลงทะเบียน / การลงทะเบียน"},
+        {"en": "regret", "th": "เสียใจ / ความเสียใจ"},
+        {"en": "regularly", "th": "เป็นประจำ / ปกติ / ประจำ"},
+        {"en": "regulate", "th": "ควบคุม"},
+        {"en": "rehearse", "th": "ซ้อม"},
+        {"en": "reject", "th": "ปฏิบัติตาม / ปฏิเสธ"},
+        {"en": "relax", "th": "ผ่อนคลาย / การผ่อนคลาย"},
+        {"en": "release", "th": "ปล่อย / การปล่อย"},
+        {"en": "relevant", "th": "เกี่ยวข้อง"},
+        {"en": "remain", "th": "ยังคงอยู่"},
+        {"en": "remarkably", "th": "น่าทึ่ง / น่าสังเกต"},
+        {"en": "remind", "th": "เตือน / สิ่งเตือนความจำ"},
+        {"en": "remittance", "th": "การส่งเงิน"},
+        {"en": "remove", "th": "เอาออก"},
+        {"en": "remuneration", "th": "ค่าตอบแทน"},
+        {"en": "renovate", "th": "ปรับปรุง / ซ่อมแซม / การปรับปรุง"},
+        {"en": "rent", "th": "เช่า / ค่าเช่า"},
+        {"en": "repair", "th": "ซ่อมแซม / การซ่อม / การชำระคืน"},
+        {"en": "repetitive", "th": "ซ้ำซาก"},
+        {"en": "replace", "th": "แทนที่ / การทดแทน"},
+        {"en": "report", "th": "รายงาน / รายงานผล / เขียนรายงาน"},
+        {"en": "representative", "th": "ตัวแทน / เป็นตัวแทน"},
+        {"en": "request", "th": "คำร้องขอ / ร้องขอ / ยื่นคำขอ"},
+        {"en": "requirement", "th": "ข้อกำหนด / ความต้องการ / จำเป็นต้อง"},
+        {"en": "reschedule", "th": "เปลี่ยนกำหนดการ / เปลี่ยนกำหนดเวลา"},
+        {"en": "rescue", "th": "ช่วยชีวิต / การช่วยชีวิต / ช่วยเหลือ"},
+        {"en": "resemble", "th": "คล้ายกับ"},
+        {"en": "reservation", "th": "การจอง"},
+        {"en": "reserve", "th": "สำรอง / การจอง"},
+        {"en": "resign", "th": "ลาออก / ลาออกจากตำแหน่ง"},
+        {"en": "resist", "th": "ต่อต้าน"},
+        {"en": "resolve", "th": "แก้ไข / แก้ไขความขัดแย้ง"},
+        {"en": "respect", "th": "ความเคารพ / เคารพ / น่านับถือ / แสดงความเคารพ"},
+        {"en": "responsibility", "th": "ความรับผิดชอบ / มีความรับผิดชอบ"},
+        {"en": "restore", "th": "ฟื้นฟู"},
+        {"en": "restructure", "th": "ปรับโครงสร้าง"},
+        {"en": "résumé", "th": "ประวัติย่อ"},
+        {"en": "retail", "th": "การขายปลีก / ขายปลีก"},
+        {"en": "retire", "th": "เกษียณ / การเกษียณ"},
+        {"en": "review", "th": "การทบทวน / ทบทวน"},
+        {"en": "revise", "th": "แก้ไข / ปรับปรุง / ที่แก้ไขแล้ว"},
+        {"en": "right away", "th": "ทันที"},
+        {"en": "rival", "th": "คู่แข่ง"},
+        {"en": "roadside", "th": "ข้างถนน"},
+        {"en": "roughly", "th": "ประมาณ / อย่างคร่าว ๆ"},
+        {"en": "route", "th": "เส้นทาง"},
+        {"en": "salary", "th": "เงินเดือน"},
+        {"en": "salvage", "th": "กู้คืน / การกู้คืน"},
+        {"en": "sample", "th": "ตัวอย่าง"},
+        {"en": "satisfactory", "th": "น่าพอใจ / พึงพอใจ / ทำให้พึงพอใจ"},
+        {"en": "save", "th": "บันทึก / ประหยัด / ช่วยชีวิต"},
+        {"en": "scene", "th": "ฉาก / เหตุการณ์ / ทิวทัศน์"},
+        {"en": "schedule", "th": "ตารางเวลา / กำหนดเวลา / ตารางบิน"},
+        {"en": "scrutinize", "th": "พิจารณาอย่างละเอียด"},
+        {"en": "search engine", "th": "เครื่องมือค้นหา"},
+        {"en": "secluded", "th": "สงบ / แยกตัวออกมา"},
+        {"en": "secretary", "th": "เลขานุการ / เกี่ยวกับเลขานุการ"},
+        {"en": "select", "th": "เลือก / การเลือก / ที่เลือกสรรอย่างรอบคอบ"},
+        {"en": "seminar", "th": "สัมมนา"},
+        {"en": "senior", "th": "อาวุโส / ผู้ที่มีอาวุโส"},
+        {"en": "serious", "th": "จริงจัง / รุนแรง"},
+        {"en": "service", "th": "การบริการ"},
+        {"en": "several", "th": "หลาย / จำนวนหนึ่ง"},
+        {"en": "shape", "th": "รูปร่าง / ก่อรูป"},
+        {"en": "sharp", "th": "คม / ฉลาด / ชัดเจน"},
+        {"en": "shift", "th": "กะทำงาน / เปลี่ยน"},
+        {"en": "shine", "th": "ส่องแสง / ความส่องสว่าง"},
+        {"en": "shipment", "th": "การจัดส่ง / การขนส่ง"},
+        {"en": "shortage", "th": "การขาดแคลน"},
+        {"en": "shuttle", "th": "รถรับส่ง / รับส่งไปมา"},
+        {"en": "sightseeing", "th": "การเที่ยวชม"},
+        {"en": "significant", "th": "สำคัญ"},
+        {"en": "simplify", "th": "ทำให้ง่ายขึ้น"},
+        {"en": "situation", "th": "สถานการณ์"},
+        {"en": "slump", "th": "ภาวะตกต่ำ / ตกต่ำ"},
+        {"en": "software", "th": "ซอฟต์แวร์"},
+        {"en": "solar", "th": "พลังงานแสงอาทิตย์"},
+        {"en": "spacious", "th": "กว้างขวาง"},
+        {"en": "spare part", "th": "อะไหล่ / เวลาว่าง"},
+        {"en": "specialize", "th": "เชี่ยวชาญ / ความเชี่ยวชาญ / เมนูพิเศษ"},
+        {"en": "specification", "th": "รายละเอียดทางเทคนิค / ระบุ"},
+        {"en": "spectator", "th": "ผู้ชม / สนามกีฬา"},
+        {"en": "stable", "th": "มั่นคง"},
+        {"en": "staff", "th": "พนักงาน / พนักงานภาคพื้น"},
+        {"en": "stapler", "th": "ที่เย็บกระดาษ / เครื่องเขียน"},
+        {"en": "stare", "th": "จ้อง"},
+        {"en": "starter", "th": "อาหารเรียกน้ำย่อย / ผู้เริ่มต้น"},
+        {"en": "steep", "th": "ชัน / สูงชัน"},
+        {"en": "stock", "th": "สต๊อกสินค้า / ตุนสินค้า"},
+        {"en": "strategic", "th": "เชิงกลยุทธ์ / กลยุทธ์"},
+        {"en": "streamline", "th": "ทำให้มีประสิทธิภาพขึ้น"},
+        {"en": "strike", "th": "หยุดงาน / การนัดหยุดงาน"},
+        {"en": "studio", "th": "ห้องอัด / สตูดิโอ"},
+        {"en": "submit", "th": "ส่ง / ยื่น (เอกสาร)"},
+        {"en": "subscribe", "th": "สมัครสมาชิก / บอกรับ / การสมัครสมาชิก"},
+        {"en": "subsidiary", "th": "บริษัทลูก / ที่อยู่ภายใต้"},
+        {"en": "suggest", "th": "แนะนำ / ข้อเสนอแนะ / เสนอความคิดเห็น"},
+        {"en": "suitability", "th": "ความเหมาะสม / ที่เหมาะสม"},
+        {"en": "supervise", "th": "ควบคุม / ดูแล / การควบคุม / การดูแล"},
+        {"en": "supplier", "th": "ผู้จัดหา / ผู้ผลิต / จัดหา / สิ่งที่จัดให้"},
+        {"en": "support", "th": "สนับสนุน / การสนับสนุน / ผู้สนับสนุน"},
+        {"en": "surrounding", "th": "โดยรอบ / บริเวณแวดล้อม"},
+        {"en": "suspicious", "th": "น่าสงสัย"},
+        {"en": "switchboard", "th": "แผงสวิตช์ / แผงโทรศัพท์"},
+        {"en": "systematic", "th": "เป็นระบบ / อย่างเป็นระเบียบ"},
+        {"en": "takeover", "th": "การเข้าซื้อกิจการ / เข้าควบคุม"},
+        {"en": "target", "th": "เป้าหมาย / ตั้งเป้า"},
+        {"en": "tax", "th": "ภาษี / เก็บภาษี / ภาษีสนามบิน"},
+        {"en": "technical", "th": "เชิงเทคนิค / ช่างเทคนิค"},
+        {"en": "temporary", "th": "ชั่วคราว"},
+        {"en": "tenant", "th": "ผู้เช่า"},
+        {"en": "terminate", "th": "ยุติ / สิ้นสุด"},
+        {"en": "terrible", "th": "แย่มาก / ยอดเยี่ยม"},
+        {"en": "theoretical", "th": "ทางทฤษฎี / ทฤษฎี"},
+        {"en": "thorough", "th": "ละเอียดถี่ถ้วน"},
+        {"en": "tidy", "th": "เป็นระเบียบ / จัดให้เรียบร้อย"},
+        {"en": "tip", "th": "เคล็ดลับ / ทิป"},
+        {"en": "tourism", "th": "การท่องเที่ยว / นักท่องเที่ยว / ทัวร์"},
+        {"en": "towel", "th": "ผ้าเช็ดตัว"},
+        {"en": "tower", "th": "หอคอย / อาคารสูง / หอบังคับการบิน"},
+        {"en": "track", "th": "เส้นทาง / ติดตาม"},
+        {"en": "trade", "th": "การค้า / แแลกเปลี่ยน"},
+        {"en": "tradition", "th": "ประเพณี"},
+        {"en": "traffic", "th": "การจราจร / การควบคุมการจราจรทางอากาศ"},
+        {"en": "training", "th": "การฝึกอบรม / ฝึกอบรมพนักงาน"},
+        {"en": "transfer", "th": "โอน / ย้าย / การโอน"},
+        {"en": "transform", "th": "เปลี่ยนแปลง / การเปลี่ยนแปลง"},
+        {"en": "transit", "th": "การขนส่ง / การผ่านทาง / การเปลี่ยนเครื่อง"},
+        {"en": "transportation", "th": "การขนส่ง / ระบบขนส่งสาธารณะ"},
+        {"en": "tremendous", "th": "ใหญ่โต / มหาศาล"},
+        {"en": "trend", "th": "แนวโน้ม"},
+        {"en": "trial", "th": "การทดลอง / การพิจารณาคดี"},
+        {"en": "triumph", "th": "ชัยชนะ / ชนะ"},
+        {"en": "trust", "th": "ความไว้วางใจ / ไว้ใจ"},
+        {"en": "turnover", "th": "ยอดขาย / อัตราการลาออกของพนักงาน"},
+        {"en": "unconditional", "th": "ไม่มีเงื่อนไข"},
+        {"en": "understand", "th": "เข้าใจ"},
+        {"en": "unfavorable", "th": "ไม่พึงประสงค์ / ไม่ดี"},
+        {"en": "unfortunately", "th": "น่าเสียดาย / โชคร้าย"},
+        {"en": "uniform", "th": "เครื่องแบบ / เหมือนกัน"},
+        {"en": "unspoiled", "th": "ไม่ถูกทำลาย / ธรรมชาติบริสุทธิ์"},
+        {"en": "unwrap", "th": "แกะห่อ"},
+        {"en": "upcoming", "th": "ที่จะมาถึง"},
+        {"en": "update", "th": "การอัปเดต / อัปเดต"},
+        {"en": "upgrade", "th": "การปรับปรุง / ปรับปรุงให้ดีขึ้น"},
+        {"en": "upset", "th": "ไม่สบายใจ / ทำให้ไม่พอใจ"},
+        {"en": "upstairs", "th": "ชั้นบน / ข้างบน"},
+        {"en": "utility bill", "th": "ค่าสาธารณูปโภค"},
+        {"en": "vacancy", "th": "ตำแหน่งว่าง / ห้องว่าง"},
+        {"en": "vacant", "th": "ว่าง"},
+        {"en": "vacation", "th": "วันหยุด / การพักผ่อน"},
+        {"en": "vaccination", "th": "การฉีดวัคซีน"},
+        {"en": "valuables", "th": "ของมีค่า"},
+        {"en": "varied", "th": "หลากหลาย / ความหลากหลาย"},
+        {"en": "vendor", "th": "ผู้ขาย"},
+        {"en": "venture", "th": "ธุรกิจเสี่ยง / การลงทุนเสี่ยง"},
+        {"en": "venue", "th": "สถานที่จัดงาน"},
+        {"en": "virus", "th": "ไวรัส"},
+        {"en": "vital", "th": "สำคัญยิ่ง / จำเป็นต่อชีวิต"},
+        {"en": "wage", "th": "ค่าจ้างรายวัน/รายชั่วโมง"},
+        {"en": "walkway", "th": "ทางเดิน"},
+        {"en": "warehouse", "th": "คลังสินค้า"},
+        {"en": "warning", "th": "คำเตือน / เตือน / สัญญาณเตือน"},
+        {"en": "warrant", "th": "หมายจับ / หนังสืออนุญาต / การรับประกันสินค้า"},
+        {"en": "wastage", "th": "ของเสีย / การสูญเปล่า"},
+        {"en": "waterproof", "th": "กันน้ำ"},
+        {"en": "wealth", "th": "ความมั่งคั่ง"},
+        {"en": "website", "th": "เว็บไซต์"},
+        {"en": "weight", "th": "น้ำหนัก"},
+        {"en": "welfare", "th": "สวัสดิการ"},
+        {"en": "wholesale", "th": "ขายส่ง"},
+        {"en": "win", "th": "ชนะ"},
+        {"en": "withdraw", "th": "ถอน / ถอนเงิน / การถอนเงิน"},
+        {"en": "workplace", "th": "สถานที่ทำงาน"},
+        {"en": "workshop", "th": "เวิร์กชอป / การอบรมเชิงปฏิบัติ"},
+        {"en": "worth", "th": "มีค่า / ไม่มีค่า"},
+        {"en": "wrap", "th": "ห่อ"},
+        {"en": "x-ray", "th": "รังสีเอกซ์ / การเอกซเรย์"},
+        {"en": "yearly", "th": "รายปี / ปีละครั้ง"},
+        {"en": "yield", "th": "ผลผลิต / ยอมจำนน / ให้ผล"},
+        {"en": "youth", "th": "เยาวชน / วัยหนุ่มสาว"},
+        {"en": "zone", "th": "เขต / พื้นที่"}
+    ];
+
+    let currentDeck = [];
+    let currentIndex = 0;
+
+    // โหลดคลังคำศัพท์เมื่อแอปเริ่มทำงาน
+    function initApp() {
+        const savedVocab = localStorage.getItem('custom_vocab_deck');
+        if (savedVocab) {
+            currentDeck = JSON.parse(savedVocab);
+            document.getElementById('deck-source').innerText = "คลังคำศัพท์ที่กำหนดเอง";
+        } else {
+            currentDeck = JSON.parse(JSON.stringify(defaultVocab));
+            document.getElementById('deck-source').innerText = "คลังเริ่มต้น (660+ คำ)";
+        }
+        currentIndex = 0;
+        showWord();
+    }
+
+    function showWord() {
+        if (currentDeck.length === 0) {
+            document.getElementById("word-eng").innerText = "ไม่มีคำศัพท์";
+            document.getElementById("word-thai").innerText = "กรุณาเพิ่มคำศัพท์ใหม่";
+            document.getElementById("card-counter").innerText = "0 / 0";
+            return;
+        }
+        
+        // รีเซ็ตการพลิกการ์ดให้อยู่หน้าแรกเสมอเมื่อเลื่อนคำศัพท์
+        document.getElementById("card-element").classList.remove("flipped");
+        
+        setTimeout(() => {
+            document.getElementById("word-eng").innerText = currentDeck[currentIndex].en;
+            document.getElementById("word-thai").innerText = currentDeck[currentIndex].th;
+            document.getElementById("card-counter").innerText = `คำที่ ${currentIndex + 1} / ${currentDeck.length}`;
+        }, 150);
+    }
+
+    function flipCard() {
+        document.getElementById("card-element").classList.toggle("flipped");
+    }
+
+    function nextWord(event) {
+        if (event) event.stopPropagation();
+        if (currentDeck.length === 0) return;
+        currentIndex = (currentIndex + 1) % currentDeck.length;
+        showWord();
+    }
+
+    function prevWord(event) {
+        if (event) event.stopPropagation();
+        if (currentDeck.length === 0) return;
+        currentIndex = (currentIndex - 1 + currentDeck.length) % currentDeck.length;
+        showWord();
+    }
+
+    function speakWord(event) {
+        if (event) event.stopPropagation();
+        if (currentDeck.length === 0) return;
+        
+        let msg = new SpeechSynthesisUtterance();
+        msg.text = currentDeck[currentIndex].en;
+        msg.lang = 'en-US';
+        window.speechSynthesis.cancel(); // ล้างคิวเสียงเก่าเพื่อป้องกันเสียงค้าง
+        window.speechSynthesis.speak(msg);
+    }
+
+    function shuffleDeck() {
+        if (currentDeck.length <= 1) return;
+        for (let i = currentDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [currentDeck[i], currentDeck[j]] = [currentDeck[j], currentDeck[i]];
+        }
+        currentIndex = 0;
+        showWord();
+    }
+
+    function togglePanel() {
+        document.getElementById("parser-panel").classList.toggle("active");
+    }
+
+    // ประมวลผลดึงข้อความคัดกรองคำซ้ำอัตโนมัติจากผู้ใช้
+    function processImport() {
+        const text = document.getElementById("import-input").value;
+        if (!text.trim()) {
+            alert("กรุณาวางข้อความคำศัพท์ก่อนครับ");
+            return;
+        }
+
+        const lines = text.split('\n');
+        let addedCount = 0;
+        let duplicateCount = 0;
+
+        // ดึง Map ของคำที่มีอยู่แล้วเพื่อตรวจซ้ำอย่างรวดเร็ว
+        let existingWords = new Map(currentDeck.map(item => [item.en.toLowerCase().trim(), true]));
+
+        lines.forEach(line => {
+            // ดักจับรูปแบบคำศัพท์ยอดนิยม เช่น "word - แปล" หรือ "1. word (n.) : แปล"
+            let cleanedLine = line.replace(/^\d+\.\s*/, ''); // ลบตัวเลขข้างหน้าออก
+            let parts = cleanedLine.split(/[-–:]/);
+            
+            if (parts.length >= 2) {
+                let eng = parts[0].replace(/\(.*\)/g, '').trim(); // ลบประเภทคำเช่น (n.), (adj.) ออก
+                let thai = parts.slice(1).join('-').trim();
+
+                if (eng && thai) {
+                    let key = eng.toLowerCase();
+                    if (!existingWords.has(key)) {
+                        currentDeck.push({ en: eng, th: thai });
+                        existingWords.set(key, true);
+                        addedCount++;
+                    } else {
+                        duplicateCount++;
+                    }
+                }
+            }
+        });
+
+        if (addedCount > 0) {
+            localStorage.setItem('custom_vocab_deck', JSON.stringify(currentDeck));
+            document.getElementById('deck-source').innerText = "คลังคำศัพท์ที่กำหนดเอง";
+            document.getElementById("import-input").value = "";
+            currentIndex = currentDeck.length - addedCount; // กระโดดไปคำที่เพิ่งเพิ่มเข้ามาคำแรก
+            showWord();
+            alert(`เพิ่มคำศัพท์ใหม่สำเร็จ ${addedCount} คำ! (ตรวจพบคำซ้ำที่ถูกตัดออก ${duplicateCount} คำ)`);
+            togglePanel();
+        } else {
+            alert(`ไม่มีคำศัพท์ใหม่ถูกเพิ่มเข้าคลัง (คำศัพท์ทั้งหมดถูกคัดออกเนื่องจากซ้ำกับของเดิม ${duplicateCount} คำ)`);
+        }
+    }
+
+    function resetToDefault() {
+        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตกลับเป็นคลังตั้งต้นเริ่มต้น? คำศัพท์เพิ่มเติมที่คุณป้อนไว้จะถูกลบออกทั้งหมด")) {
+            localStorage.removeItem('custom_vocab_deck');
+            initApp();
+            alert("รีเซ็ตเป็นคลังข้อมูลเริ่มต้นเรียบร้อยแล้วครับ");
+        }
+    }
+
+    // สั่งรันโปรแกรมเมื่อโหลดหน้าเว็บสำเร็จ
+    window.onload = initApp;
+</script>
+
+</body>
+</html>
