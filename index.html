@@ -350,6 +350,8 @@
 
     <div class="extra-controls">
         <button class="btn btn-sub" onclick="shuffleDeck()">🔀 สลับการ์ด</button>
+        <button class="btn btn-sub" onclick="loadDeck('default')">📘 คลังเริ่มต้น</button>
+        <button class="btn btn-sub" onclick="loadDeck('airport')">✈️ Airport vocab</button>
         <button class="btn btn-sub" onclick="toggleGrammarPanel()">📚 Grammar</button>
         <button class="btn btn-sub" onclick="togglePanel()">⚙️ จัดการ/เพิ่มคำศัพท์</button>
         <button class="btn btn-sub" id="btn-reset" onclick="resetToDefault()">🔄 รีเซ็ตคลัง</button>
@@ -1051,19 +1053,107 @@
         {"en": "zone", "th": "เขต / พื้นที่"}
     ];
 
+    const airportVocab = [
+        {"en": "terminal", "th": "อาคารผู้โดยสาร"},
+        {"en": "runway", "th": "ทางวิ่งของเครื่องบิน"},
+        {"en": "boarding gate", "th": "ประตูขึ้นเครื่อง"},
+        {"en": "check-in counter", "th": "เคาน์เตอร์เช็คอิน"},
+        {"en": "baggage claim", "th": "จุดรับสัมภาระ"},
+        {"en": "customs", "th": "ด่านศุลกากร / ศุลกากร"},
+        {"en": "security check", "th": "จุดตรวจความปลอดภัย"},
+        {"en": "duty-free", "th": "ปลอดภาษี"},
+        {"en": "departure", "th": "การออกเดินทาง"},
+        {"en": "arrival", "th": "การมาถึง"},
+        {"en": "turbulence", "th": "การสั่นสะเทือนในอากาศ / ความปั่นป่วนอากาศ"},
+        {"en": "altitude", "th": "ความสูงเหนือระดับน้ำทะเล"},
+        {"en": "cockpit", "th": "ห้องนักบิน"},
+        {"en": "flight attendant", "th": "พนักงานต้อนรับบนเครื่องบิน"},
+        {"en": "cabin crew", "th": "ลูกเรือ / พนักงานต้อนรับบนเครื่องบิน"},
+        {"en": "airline", "th": "สายการบิน"},
+        {"en": "passenger", "th": "ผู้โดยสาร"},
+        {"en": "boarding pass", "th": "บัตรขึ้นเครื่องบิน"},
+        {"en": "carry-on luggage", "th": "สัมภาระถือขึ้นเครื่อง"},
+        {"en": "checked baggage", "th": "สัมภาระโหลดใต้เครื่อง"},
+        {"en": "overbooked", "th": "จองเกินจำนวนที่นั่ง"},
+        {"en": "emergency exit", "th": "ทางออกฉุกเฉิน"},
+        {"en": "itinerary", "th": "แผนการเดินทาง / กำหนดการเดินทาง"},
+        {"en": "connecting flight", "th": "เที่ยวบินต่อเครื่อง"},
+        {"en": "layover", "th": "การแวะพักระหว่างทาง"},
+        {"en": "jet lag", "th": "อาการเหนื่อยล้าจากการเดินทางไกล"},
+        {"en": "immigration", "th": "การตรวจคนเข้าเมือง / ด่านตรวจคนเข้าเมือง"},
+        {"en": "passport control", "th": "ด่านตรวจหนังสือเดินทาง"},
+        {"en": "lost and found", "th": "จุดรับแจ้งของหาย"},
+        {"en": "airport", "th": "สนามบิน"},
+        {"en": "passport", "th": "หนังสือเดินทาง"},
+        {"en": "visa", "th": "วีซ่า"},
+        {"en": "boarding time", "th": "เวลาขึ้นเครื่อง"},
+        {"en": "airport shuttle", "th": "รถรับส่งสนามบิน"},
+        {"en": "baggage carousel", "th": "สายพานรับสัมภาระ"},
+        {"en": "departure board", "th": "จอแสดงเที่ยวบินขาออก"},
+        {"en": "arrival board", "th": "จอแสดงเที่ยวบินขาเข้า"},
+        {"en": "ticket counter", "th": "เคาน์เตอร์จำหน่ายตั๋ว"},
+        {"en": "gate agent", "th": "เจ้าหน้าที่ประจำประตู"},
+        {"en": "security checkpoint", "th": "ด่านตรวจความปลอดภัย"},
+        {"en": "customs officer", "th": "เจ้าหน้าที่ศุลกากร"},
+        {"en": "immigration officer", "th": "เจ้าหน้าที่ตรวจคนเข้าเมือง"},
+        {"en": "luggage trolley", "th": "รถเข็นสัมภาระ"},
+        {"en": "flight schedule", "th": "ตารางเที่ยวบิน"},
+        {"en": "captain", "th": "กัปตัน"},
+        {"en": "first officer", "th": "นักบินผู้ช่วย"},
+        {"en": "flight plan", "th": "แผนการบิน"},
+        {"en": "clearance", "th": "ใบอนุญาต / การอนุญาต"},
+        {"en": "taxi", "th": "เคลื่อนที่บนพื้น (สำหรับเครื่องบิน)"},
+        {"en": "runway 18L", "th": "ทางวิ่ง 18L"},
+        {"en": "weather", "th": "สภาพอากาศ"},
+        {"en": "traffic conditions", "th": "สภาพการจราจรทางอากาศ"},
+        {"en": "wind speed", "th": "ความเร็วลม"},
+        {"en": "landing", "th": "การลงจอด"},
+        {"en": "not only... but also", "th": "ไม่เพียงแต่... แต่ยัง"},
+        {"en": "both... and", "th": "ทั้ง... และ..."},
+        {"en": "either... or", "th": "อย่างใดอย่างหนึ่ง... หรือ"},
+        {"en": "neither... nor", "th": "ไม่ทั้งสองอย่าง / ไม่... ก็ไม่..."}
+    ];
+
     let currentDeck = [];
     let currentIndex = 0;
+    let currentDeckKey = 'default';
+
+    function setDeckSourceLabel(key) {
+        const source = document.getElementById('deck-source');
+        if (!source) return;
+        if (key === 'airport') {
+            source.innerText = "คลังคำศัพท์สนามบิน";
+        } else if (key === 'custom') {
+            source.innerText = "คลังคำศัพท์ที่กำหนดเอง";
+        } else {
+            source.innerText = "คลังเริ่มต้น (660+ คำ)";
+        }
+    }
+
+    function loadDeck(deckKey) {
+        if (deckKey === 'airport') {
+            currentDeck = JSON.parse(JSON.stringify(airportVocab));
+            currentDeckKey = 'airport';
+        } else {
+            currentDeck = JSON.parse(JSON.stringify(defaultVocab));
+            currentDeckKey = 'default';
+        }
+        currentIndex = 0;
+        setDeckSourceLabel(currentDeckKey);
+        showWord();
+    }
 
     // โหลดคลังคำศัพท์เมื่อแอปเริ่มทำงาน
     function initApp() {
         const savedVocab = localStorage.getItem('custom_vocab_deck');
         if (savedVocab) {
             currentDeck = JSON.parse(savedVocab);
-            document.getElementById('deck-source').innerText = "คลังคำศัพท์ที่กำหนดเอง";
+            currentDeckKey = 'custom';
         } else {
             currentDeck = JSON.parse(JSON.stringify(defaultVocab));
-            document.getElementById('deck-source').innerText = "คลังเริ่มต้น (660+ คำ)";
+            currentDeckKey = 'default';
         }
+        setDeckSourceLabel(currentDeckKey);
         currentIndex = 0;
         showWord();
     }
