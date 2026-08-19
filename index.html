@@ -1365,6 +1365,18 @@
         setDeckSourceLabel(currentDeckKey);
         currentIndex = 0;
         showWord();
+        // หากมีไฟล์ rc_questions.json อยู่ที่รากโปรเจค ให้โหลดอัตโนมัติ
+        fetch('rc_questions.json').then(r => {
+            if (!r.ok) throw new Error('not found');
+            return r.json();
+        }).then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+                loadRCQuestionsFromJSON(data);
+                document.getElementById('mock-total').innerText = mockTestQuestions.length;
+            }
+        }).catch(()=>{
+            // no rc file — เงียบไว้
+        });
     }
 
     function showWord() {
