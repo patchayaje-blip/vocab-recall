@@ -251,6 +251,65 @@
             margin-bottom: 3px;
         }
 
+        .grammar-quiz {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .grammar-quiz select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccd0d5;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            background: #fff;
+        }
+
+        .grammar-question {
+            font-weight: 600;
+            line-height: 1.5;
+            margin: 0 0 12px 0;
+        }
+
+        .grammar-options {
+            display: grid;
+            gap: 8px;
+        }
+
+        .grammar-option {
+            width: 100%;
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #d1d5da;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .grammar-option:hover {
+            background: #f6f8fa;
+        }
+
+        .grammar-option.correct {
+            background: #e6f4ea;
+            border-color: var(--success-color);
+        }
+
+        .grammar-option.incorrect {
+            background: #fce8e6;
+            border-color: #d93025;
+        }
+
+        .grammar-feedback {
+            min-height: 22px;
+            margin: 12px 0 0 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
         .grammar-preview {
             margin-top: 10px;
             padding: 12px;
@@ -371,6 +430,24 @@
             <button class="btn grammar-item" onclick="showGrammarTopic('past-perfect')"><strong>Past Perfect</strong>อดีตก่อนอดีต</button>
         </div>
         <div class="grammar-preview" id="grammar-preview"></div>
+        <div class="grammar-quiz">
+            <h3>✏️ เพิ่มโจทย์ Grammar</h3>
+            <select id="grammar-category" onchange="loadGrammarQuestion()">
+                <option value="all">ทุกหมวด</option>
+                <option value="subjectVerb">Subject-Verb Agreement</option>
+                <option value="articles">Articles (a/an/the)</option>
+                <option value="prepositions">Prepositions</option>
+                <option value="passive">Passive Voice</option>
+                <option value="relative">Relative Clauses</option>
+                <option value="gerund">Gerund / Infinitive</option>
+                <option value="conditional">Conditionals</option>
+                <option value="comparative">Comparatives</option>
+            </select>
+            <p class="grammar-question" id="grammar-question">กดเลือกหัวข้อ Tenses หรือเลือกหมวดเพื่อเริ่มทำโจทย์</p>
+            <div class="grammar-options" id="grammar-options"></div>
+            <p class="grammar-feedback" id="grammar-feedback"></p>
+            <button class="btn btn-action" type="button" onclick="loadGrammarQuestion()">โจทย์ถัดไป</button>
+        </div>
     </div>
 
     <div class="panel" id="parser-panel">
@@ -1322,6 +1399,53 @@
         }
     }
 
+    const grammarQuestions = [
+        { category: "subjectVerb", question: "The manager ___ the report every Friday.", options: ["review", "reviews", "reviewing", "reviewed"], answer: "reviews", explanation: "ประธานเอกพจน์ The manager ใช้กริยาเติม s" },
+        { category: "subjectVerb", question: "The employees ___ attending the meeting now.", options: ["is", "are", "was", "be"], answer: "are", explanation: "employees เป็นพหูพจน์ จึงใช้ are" },
+        { category: "articles", question: "She is ___ experienced accountant.", options: ["a", "an", "the", "ไม่มี article"], answer: "an", explanation: "experienced ขึ้นต้นด้วยเสียงสระ จึงใช้ an" },
+        { category: "articles", question: "Please send me ___ invoice by email.", options: ["a", "an", "the", "ไม่มี article"], answer: "the", explanation: "invoice ที่พูดถึงเป็นเอกสารเฉพาะ จึงใช้ the" },
+        { category: "prepositions", question: "The seminar starts ___ 9 a.m.", options: ["in", "on", "at", "by"], answer: "at", explanation: "ใช้ at กับเวลาที่ระบุเป็นจุด" },
+        { category: "prepositions", question: "We will meet ___ Monday morning.", options: ["in", "on", "at", "for"], answer: "on", explanation: "ใช้ on กับวันและวันที่" },
+        { category: "passive", question: "The documents ___ by the assistant yesterday.", options: ["file", "filed", "were filed", "are filing"], answer: "were filed", explanation: "เหตุการณ์ในอดีตและประธานถูกกระทำ ใช้ were + V3" },
+        { category: "relative", question: "The applicant ___ resume was selected has five years of experience.", options: ["who", "which", "whose", "where"], answer: "whose", explanation: "whose ใช้แสดงความเป็นเจ้าของ" },
+        { category: "gerund", question: "They decided ___ the project next month.", options: ["start", "starting", "to start", "started"], answer: "to start", explanation: "decide ตามด้วย to + V1" },
+        { category: "gerund", question: "She enjoys ___ with international clients.", options: ["work", "to work", "working", "worked"], answer: "working", explanation: "enjoy ตามด้วย gerund หรือ V-ing" },
+        { category: "conditional", question: "If you study regularly, you ___ improve your score.", options: ["will", "would", "are", "had"], answer: "will", explanation: "First Conditional ใช้ If + V1, will + V1" },
+        { category: "comparative", question: "This route is ___ than the previous one.", options: ["short", "shortest", "shorter", "more short"], answer: "shorter", explanation: "คำคุณศัพท์สั้นใช้รูป comparative เติม -er" }
+    ];
+
+    let currentGrammarQuestion = null;
+
+    function loadGrammarQuestion() {
+        const selectedCategory = document.getElementById("grammar-category").value;
+        const availableQuestions = selectedCategory === "all"
+            ? grammarQuestions
+            : grammarQuestions.filter(item => item.category === selectedCategory);
+        currentGrammarQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+
+        document.getElementById("grammar-question").innerText = currentGrammarQuestion.question;
+        document.getElementById("grammar-feedback").innerText = "";
+        document.getElementById("grammar-options").innerHTML = currentGrammarQuestion.options.map(option =>
+            `<button class="grammar-option" type="button" onclick="checkGrammarAnswer(this, '${option.replace(/'/g, "\\'")}')">${option}</button>`
+        ).join("");
+    }
+
+    function checkGrammarAnswer(button, selectedAnswer) {
+        if (!currentGrammarQuestion || document.querySelector(".grammar-option.correct, .grammar-option.incorrect")) return;
+
+        const isCorrect = selectedAnswer === currentGrammarQuestion.answer;
+        button.classList.add(isCorrect ? "correct" : "incorrect");
+        if (!isCorrect) {
+            document.querySelectorAll(".grammar-option").forEach(option => {
+                if (option.innerText === currentGrammarQuestion.answer) option.classList.add("correct");
+            });
+        }
+        document.getElementById("grammar-feedback").innerText = isCorrect
+            ? `ถูกต้อง! ${currentGrammarQuestion.explanation}`
+            : `ยังไม่ถูก คำตอบคือ "${currentGrammarQuestion.answer}" ${currentGrammarQuestion.explanation}`;
+        document.getElementById("grammar-feedback").style.color = isCorrect ? "var(--success-color)" : "#d93025";
+    }
+
     function toggleGrammarPanel() {
         const grammarPanel = document.getElementById('grammar-panel');
         const parserPanel = document.getElementById('parser-panel');
@@ -1329,6 +1453,7 @@
         parserPanel.classList.remove('active');
         if (grammarPanel.classList.contains('active')) {
             showGrammarTopic('present-simple');
+            loadGrammarQuestion();
         }
     }
 
