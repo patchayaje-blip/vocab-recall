@@ -518,6 +518,7 @@
         <button class="btn btn-sub" onclick="toggleGrammarPanel()">📚 Grammar</button>
         <button class="btn btn-sub" onclick="togglePanel()">⚙️ จัดการ/เพิ่มคำศัพท์</button>
         <button class="btn btn-sub" style="background-color: #fff3cd; color: #856404;" onclick="toggleMockTestPanel()">📋 Mock Test</button>
+        <button class="btn btn-sub" onclick="toggleRCImportPanel()">📥 นำเข้า RC (JSON)</button>
         <button class="btn btn-sub" id="btn-reset" onclick="resetToDefault()">🔄 รีเซ็ตคลัง</button>
     </div>
 
@@ -564,6 +565,17 @@
         <div class="panel-btns">
             <button class="btn btn-action" onclick="processImport()">กรองและนำเข้าคลังสมาท</button>
         </div>
+    </div>
+
+    <div class="panel" id="rc-import-panel">
+        <h3>📥 นำเข้า RC (Reading Comprehension)</h3>
+        <p style="font-size:0.9rem;color:var(--text-sub)">เลือกไฟล์ `rc_questions.json` ที่ได้จากการสกัด หรือไฟล์ JSON ที่มีรูปแบบคำถามเดียวกัน (รองรับไฟล์ที่ได้จากสคริปต์ `scripts/extract_rc.py`).</p>
+        <input type="file" id="rc-file-input" accept="application/json" />
+        <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end;">
+            <button class="btn btn-action" onclick="importRCFromInput()">โหลดข้อสอบ</button>
+            <button class="btn btn-sub" onclick="toggleRCImportPanel()">ปิด</button>
+        </div>
+        <p style="font-size:0.85rem;color:#666;margin-top:8px">หากคุณต้องการให้ผมสกัดจาก PDF ให้วางไฟล์ PDF ลงในโฟลเดอร์โปรเจคและรัน:<br><code>python scripts/extract_rc.py yourfile.pdf</code></p>
     </div>
 
     <div class="panel" id="mock-test-panel" style="display: none; background: #fff8e1; border-left: 4px solid #fbc02d;">
@@ -1585,7 +1597,7 @@
     }
 
     // ========== MOCK TEST DATA & FUNCTIONS ==========
-    const mockTestQuestions = [
+    let mockTestQuestions = [
         // Part 5: Incomplete Sentences (1-20)
         { part: "part5", number: 1, question: "The manager ___ the new policy to all staff members yesterday.", options: ["announced", "announcing", "has announced", "announces"], answer: "announced", explanation: "อดีตอย่างง่าย 'yesterday' บ่งชี้เวลาอดีต" },
         { part: "part5", number: 2, question: "All employees must ___ their attendance by Friday.", options: ["confirm", "confirming", "confirmed", "confirms"], answer: "confirm", explanation: "กริยาเป็นอกเสบียง ใช้รูป base form หลัง 'must'" },
@@ -1806,6 +1818,73 @@
     }
 
     // สั่งรันโปรแกรมเมื่อโหลดหน้าเว็บสำเร็จ
+    // --- RC import helpers ---
+    function toggleRCImportPanel() {
+        const panel = document.getElementById('rc-import-panel');
+        const mockPanel = document.getElementById('mock-test-panel');
+        const grammarPanel = document.getElementById('grammar-panel');
+        panel.classList.toggle('active');
+        mockPanel.style.display = 'none';
+        grammarPanel.classList.remove('active');
+    }
+
+    function importRCFromInput() {
+        const input = document.getElementById('rc-file-input');
+        if (!input.files || input.files.length === 0) {
+            alert('กรุณาเลือกไฟล์ JSON ของข้อสอบก่อน');
+            return;
+        }
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                loadRCQuestionsFromJSON(data);
+                toggleRCImportPanel();
+                // open mock test panel
+                const mockPanel = document.getElementById('mock-test-panel');
+                mockPanel.style.display = 'block';
+                mockTestState.started = false;
+                loadMockQuestion();
+            } catch (err) {
+                alert('ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message);
+            }
+        };
+        reader.readAsText(file, 'utf-8');
+    }
+
+    function loadRCQuestionsFromJSON(arr) {
+        // Expected input: array of { num, text, choices: [{label, text}], answer?, explanation? }
+        const mapped = arr.map(item => {
+            const options = (item.choices || []).map(c => c.text || c);
+            // determine answer: if answer provided as label (A/B...) convert to text
+            let answerText = '';
+            if (item.answer) {
+                // if answer equals a label like 'A' or 'B'
+                const labelMatch = String(item.answer).trim().toUpperCase();
+                const idx = labelMatch.length === 1 && labelMatch >= 'A' && labelMatch <= 'Z' ? labelMatch.charCodeAt(0) - 65 : -1;
+                if (idx >= 0 && idx < options.length) answerText = options[idx];
+                else answerText = String(item.answer);
+            }
+            return {
+                part: 'part7',
+                number: item.num || item.number || 0,
+                question: item.text || item.question || '',
+                options: options.length ? options : ['(ไม่มีตัวเลือก)'],
+                answer: answerText,
+                explanation: item.explanation || item.source || ''
+            };
+        });
+        if (mapped.length === 0) {
+            alert('ไม่พบข้อสอบในไฟล์ JSON ที่เลือก');
+            return;
+        }
+        mockTestQuestions = mapped;
+        mockTestState = { currentIndex: 0, answered: {}, score: 0, started: false };
+        document.getElementById('mock-total').innerText = mockTestQuestions.length;
+        alert('โหลดข้อสอบ RC เรียบร้อย จำนวน ' + mockTestQuestions.length + ' ข้อ');
+    }
+
     window.onload = initApp;
 </script>
 
