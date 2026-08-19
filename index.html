@@ -588,6 +588,7 @@
         <div class="mock-test-explanation" id="mock-explanation" style="display: none;"></div>
         <div class="mock-test-buttons">
             <button class="btn btn-action" id="mock-next-btn" onclick="loadMockQuestion()" style="display: none;">ข้อถัดไป</button>
+            <button class="btn btn-sub" id="mock-skip-btn" onclick="skipMockQuestion()">ข้ามข้อ</button>
             <button class="btn btn-sub" onclick="toggleMockTestPanel()">✕ ปิด</button>
         </div>
         <div id="mock-result"></div>
@@ -2002,6 +2003,21 @@
         mockTestState.currentIndex++;
     }
 
+    function skipMockQuestion() {
+        // Skip without marking as answered
+        if (mockTestState.currentIndex >= mockTestQuestions.length) {
+            showMockTestResults();
+            return;
+        }
+        mockTestState.currentIndex++;
+        // If reached end, show results
+        if (mockTestState.currentIndex >= mockTestQuestions.length) {
+            showMockTestResults();
+            return;
+        }
+        loadMockQuestion();
+    }
+
     function showMockTestResults() {
         const percentage = Math.round((mockTestState.score / mockTestQuestions.length) * 100);
         let feedback = '';
@@ -2146,7 +2162,7 @@
                 else answerText = String(item.answer);
             }
             return {
-                part: 'part7',
+                part: item.part || 'part7',
                 number: item.num || item.number || 0,
                 question: item.text || item.question || '',
                 options: options.length ? options : ['(ไม่มีตัวเลือก)'],
@@ -2154,14 +2170,16 @@
                 explanation: item.explanation || item.source || ''
             };
         });
-        if (mapped.length === 0) {
-            alert('ไม่พบข้อสอบในไฟล์ JSON ที่เลือก');
+        // Keep only Part 5 (Incomplete Sentences) as requested
+        const part5Only = mapped.filter(m => m.part === 'part5');
+        if (part5Only.length === 0) {
+            alert('ไม่มีข้อสอบ Part 5 ในไฟล์ JSON ที่เลือก (โหลดเฉพาะ Part 5 เท่านั้น)');
             return;
         }
-        mockTestQuestions = mapped;
+        mockTestQuestions = part5Only;
         mockTestState = { currentIndex: 0, answered: {}, score: 0, started: false };
         document.getElementById('mock-total').innerText = mockTestQuestions.length;
-        alert('โหลดข้อสอบ RC เรียบร้อย จำนวน ' + mockTestQuestions.length + ' ข้อ');
+        alert('โหลดข้อสอบ Part 5 เรียบร้อย จำนวน ' + mockTestQuestions.length + ' ข้อ');
     }
 
     window.onload = initApp;
