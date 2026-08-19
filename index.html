@@ -1366,6 +1366,11 @@
         setDeckSourceLabel(currentDeckKey);
         currentIndex = 0;
         showWord();
+        // Ensure built-in mockTestQuestions only include Part 5 by default
+        if (Array.isArray(mockTestQuestions) && mockTestQuestions.length > 0) {
+            mockTestQuestions = mockTestQuestions.filter(q => q.part === 'part5');
+            document.getElementById('mock-total').innerText = mockTestQuestions.length;
+        }
         // Auto-load embedded RC if present (preferred for file:// and offline)
         if (typeof EMBEDDED_RC !== 'undefined' && Array.isArray(EMBEDDED_RC) && EMBEDDED_RC.length > 0) {
             loadRCQuestionsFromJSON(EMBEDDED_RC);
